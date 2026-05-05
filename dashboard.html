@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brief — AI Rulebook</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f8f9fa;
+      --surface: #ffffff;
+      --border: #dee2e6;
+      --text: #212529;
+      --muted: #6c757d;
+      --accent: #0d6efd;
+      --accent-hover: #0b5ed7;
+      --danger: #dc3545;
+      --danger-hover: #bb2d3b;
+      --success: #198754;
+
+      --cat-writing: #0d6efd;
+      --cat-coding: #198754;
+      --cat-tone: #fd7e14;
+      --cat-general: #6c757d;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    header h1 span { color: var(--accent); }
+
+    .token-meter {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .token-bar-wrap {
+      width: 160px;
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .token-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .token-bar.warn  { background: #fd7e14; }
+    .token-bar.over  { background: var(--danger); }
+
+    main { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+
+    .card-body { padding: 1.25rem; }
+
+    /* Add rule form */
+    .add-form { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .add-form input[type="text"] {
+      flex: 1;
+      min-width: 200px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .add-form input[type="text"]:focus { border-color: var(--accent); }
+
+    .add-form select {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      background: white;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-primary  { background: var(--accent);  color: white; }
+    .btn-primary:hover  { background: var(--accent-hover); }
+    .btn-danger   { background: var(--danger);  color: white; }
+    .btn-danger:hover   { background: var(--danger-hover); }
+    .btn-success  { background: var(--success); color: white; }
+    .btn-ghost    { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--bg); }
+    .btn-sm { padding: 4px 10px; font-size: 13px; }
+
+    /* Rules table */
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; padding: 8px 12px; color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg); }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      color: white;
+      white-space: nowrap;
+    }
+
+    .badge-writing { background: var(--cat-writing); }
+    .badge-coding  { background: var(--cat-coding); }
+    .badge-tone    { background: var(--cat-tone); }
+    .badge-general { background: var(--cat-general); }
+
+    .rule-text { max-width: 420px; }
+
+    .edit-row td { background: #f0f4ff; }
+    .edit-row input { width: 100%; padding: 6px 8px; border: 1px solid var(--accent); border-radius: 4px; font-size: 14px; }
+    .edit-row select { padding: 6px 8px; border: 1px solid var(--accent); border-radius: 4px; font-size: 14px; }
+
+    .empty-state { padding: 2rem; text-align: center; color: var(--muted); }
+
+    /* Extract section */
+    .extract-area textarea {
+      width: 100%;
+      min-height: 140px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      resize: vertical;
+      outline: none;
+    }
+
+    .extract-area textarea:focus { border-color: var(--accent); }
+
+    .extract-controls { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+
+    .proposals { margin-top: 1rem; display: flex; flex-direction: column; gap: 8px; }
+
+    .proposal {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
+    .proposal-text { flex: 1; font-size: 14px; }
+    .proposal-cat  { font-size: 12px; color: var(--muted); }
+
+    /* Flash messages */
+    .flash {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      color: white;
+      z-index: 100;
+      animation: fadein 0.2s ease;
+    }
+
+    .flash-ok    { background: var(--success); }
+    .flash-error { background: var(--danger); }
+
+    @keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Maintenance proposals */
+    .badge-merge  { background: var(--cat-writing); }
+    .badge-reword { background: var(--cat-tone); }
+    .badge-delete { background: var(--danger); }
+
+    .m-proposal {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
+    .m-proposal-header { display: flex; align-items: flex-start; gap: 10px; }
+    .m-proposal-body { font-size: 13px; color: var(--muted); padding-left: 2px; }
+    .m-proposal-new { font-size: 14px; font-style: italic; color: var(--text); }
+    .m-proposal-actions { display: flex; gap: 6px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1><span>brief</span> — AI Rulebook</h1>
+  <div class="token-meter">
+    <span id="token-label">0 / 3000 tokens</span>
+    <div class="token-bar-wrap">
+      <div class="token-bar" id="token-bar" style="width:0%"></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Add rule -->
+  <div class="card">
+    <div class="card-header">Add Rule</div>
+    <div class="card-body">
+      <form class="add-form" id="add-form" onsubmit="handleAdd(event)">
+        <input type="text" id="new-text" placeholder="e.g. Never use em dashes in writing" required />
+        <select id="new-category">
+          <option value="general">General</option>
+          <option value="writing">Writing</option>
+          <option value="coding">Coding</option>
+          <option value="tone">Tone</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Add Rule</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Rules table -->
+  <div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+      Your Rules
+      <button class="btn btn-ghost btn-sm" id="maintain-btn" onclick="handleMaintain()">Maintain</button>
+    </div>
+    <table id="rules-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Category</th>
+          <th>Rule</th>
+          <th>Used</th>
+          <th>Source</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="rules-body">
+        <tr><td colspan="6" class="empty-state">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Maintenance proposals (hidden until Maintain is clicked) -->
+  <div class="card" id="maintenance-card" style="display:none">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+      Maintenance Suggestions
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('maintenance-card').style.display='none'">Dismiss all</button>
+    </div>
+    <div class="card-body">
+      <p style="color:var(--muted);font-size:13px;margin-bottom:12px">
+        Review each suggestion. Nothing changes until you click Accept.
+      </p>
+      <div id="maintenance-proposals" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+  </div>
+
+  <!-- Extract from transcript -->
+  <div class="card">
+    <div class="card-header">Extract from Transcript</div>
+    <div class="card-body extract-area">
+      <p style="color:var(--muted);font-size:13px;margin-bottom:10px;">
+        Paste a conversation transcript below. Brief will analyze it and propose
+        rules that reflect your durable preferences — nothing is saved automatically.
+      </p>
+      <textarea id="transcript" placeholder="Paste a conversation transcript here…"></textarea>
+      <div class="extract-controls">
+        <button class="btn btn-primary" id="extract-btn" onclick="handleExtract()">
+          Extract Rules
+        </button>
+        <span id="extract-status" style="color:var(--muted);font-size:13px;"></span>
+      </div>
+      <div class="proposals" id="proposals"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  let TOKEN_BUDGET = 600; // updated from /api/stats on load
+
+  // ── Utilities ──────────────────────────────────────────────────────────────
+
+  function flash(msg, type = "ok") {
+    const el = document.createElement("div");
+    el.className = `flash flash-${type}`;
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+
+  async function api(method, path, body) {
+    const opts = {
+      method,
+      headers: { "Content-Type": "application/json" },
+    };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    const res = await fetch(path, opts);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || res.statusText);
+    }
+    return res.json();
+  }
+
+  function badgeHTML(category) {
+    return `<span class="badge badge-${category}">${category}</span>`;
+  }
+
+  // ── Token meter ────────────────────────────────────────────────────────────
+
+  async function refreshStats() {
+    try {
+      const stats = await api("GET", "/api/stats");
+      if (stats.token_budget) TOKEN_BUDGET = stats.token_budget;
+      const pct = Math.min(100, Math.round(stats.estimated_tokens / TOKEN_BUDGET * 100));
+      const bar = document.getElementById("token-bar");
+      bar.style.width = pct + "%";
+      bar.className = "token-bar" + (pct > 90 ? " over" : pct > 70 ? " warn" : "");
+      document.getElementById("token-label").textContent =
+        `~${stats.estimated_tokens} / ${TOKEN_BUDGET} tokens`;
+    } catch (e) {
+      // Non-critical — meter just won't update
+    }
+  }
+
+  // ── Rules table ────────────────────────────────────────────────────────────
+
+  async function loadRules() {
+    try {
+      const rules = await api("GET", "/api/rules");
+      renderRules(rules);
+      refreshStats();
+    } catch (e) {
+      document.getElementById("rules-body").innerHTML =
+        `<tr><td colspan="6" class="empty-state">Failed to load rules: ${e.message}</td></tr>`;
+    }
+  }
+
+  function renderRules(rules) {
+    const tbody = document.getElementById("rules-body");
+    if (rules.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No rules yet — add one above or extract from a transcript.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rules.map(rule => `
+      <tr id="row-${rule.id}">
+        <td style="color:var(--muted);font-size:12px">${rule.id}</td>
+        <td>${badgeHTML(rule.category)}</td>
+        <td class="rule-text">${escapeHTML(rule.text)}</td>
+        <td style="color:var(--muted);font-size:12px">${rule.hit_count}×</td>
+        <td style="color:var(--muted);font-size:12px">${rule.source}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-ghost btn-sm" onclick="startEdit(${rule.id})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteRule(${rule.id})" style="margin-left:4px">Delete</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  function escapeHTML(str) {
+    return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  // ── Add rule ───────────────────────────────────────────────────────────────
+
+  async function handleAdd(e) {
+    e.preventDefault();
+    const text = document.getElementById("new-text").value.trim();
+    const category = document.getElementById("new-category").value;
+    if (!text) return;
+    try {
+      await api("POST", "/api/rules", { text, category });
+      document.getElementById("new-text").value = "";
+      flash("Rule added.");
+      loadRules();
+    } catch (e) {
+      flash(e.message, "error");
+    }
+  }
+
+  // ── Inline edit ────────────────────────────────────────────────────────────
+
+  async function startEdit(id) {
+    // Get current values from the row
+    const row = document.getElementById(`row-${id}`);
+    const currentText = row.cells[2].textContent;
+    const currentCat  = row.cells[1].querySelector(".badge").textContent;
+
+    row.className = "edit-row";
+    row.innerHTML = `
+      <td style="color:var(--muted);font-size:12px">${id}</td>
+      <td>
+        <select id="edit-cat-${id}">
+          ${["general","writing","coding","tone"].map(c =>
+            `<option value="${c}" ${c === currentCat ? "selected" : ""}>${c}</option>`
+          ).join("")}
+        </select>
+      </td>
+      <td colspan="3"><input type="text" id="edit-text-${id}" value="${escapeHTML(currentText)}" /></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-primary btn-sm" onclick="saveEdit(${id})">Save</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadRules()" style="margin-left:4px">Cancel</button>
+      </td>
+    `;
+    document.getElementById(`edit-text-${id}`).focus();
+  }
+
+  async function saveEdit(id) {
+    const text     = document.getElementById(`edit-text-${id}`).value.trim();
+    const category = document.getElementById(`edit-cat-${id}`).value;
+    if (!text) return;
+    try {
+      await api("PUT", `/api/rules/${id}`, { text, category });
+      flash("Rule updated.");
+      loadRules();
+    } catch (e) {
+      flash(e.message, "error");
+    }
+  }
+
+  // ── Delete rule ────────────────────────────────────────────────────────────
+
+  async function deleteRule(id) {
+    if (!confirm("Delete this rule?")) return;
+    try {
+      await api("DELETE", `/api/rules/${id}`);
+      flash("Rule deleted.");
+      loadRules();
+    } catch (e) {
+      flash(e.message, "error");
+    }
+  }
+
+  // ── Extract from transcript ────────────────────────────────────────────────
+
+  async function handleExtract() {
+    const transcript = document.getElementById("transcript").value.trim();
+    if (!transcript) { flash("Paste a transcript first.", "error"); return; }
+
+    const btn    = document.getElementById("extract-btn");
+    const status = document.getElementById("extract-status");
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Analyzing…';
+    status.textContent = "";
+    document.getElementById("proposals").innerHTML = "";
+
+    try {
+      const data = await api("POST", "/api/extract", { transcript });
+      renderProposals(data.proposals);
+      status.textContent = data.proposals.length
+        ? `${data.proposals.length} proposal(s) found.`
+        : "No durable preferences found in this transcript.";
+    } catch (e) {
+      flash(e.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Extract Rules";
+    }
+  }
+
+  function renderProposals(proposals) {
+    const container = document.getElementById("proposals");
+    if (proposals.length === 0) { container.innerHTML = ""; return; }
+
+    container.innerHTML = proposals.map((p, i) => `
+      <div class="proposal" id="proposal-${i}">
+        <div class="proposal-text">
+          ${badgeHTML(p.category)}
+          <span style="margin-left:6px">${escapeHTML(p.text)}</span>
+        </div>
+        <button class="btn btn-success btn-sm" onclick="acceptProposal(${i}, '${escapeHTML(p.text).replace(/'/g, "\\'")}', '${p.category}')">
+          Accept
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('proposal-${i}').remove()">
+          Dismiss
+        </button>
+      </div>
+    `).join("");
+  }
+
+  async function acceptProposal(i, text, category) {
+    try {
+      await api("POST", "/api/rules", { text, category });
+      document.getElementById(`proposal-${i}`).remove();
+      flash("Rule saved.");
+      loadRules();
+    } catch (e) {
+      flash(e.message, "error");
+    }
+  }
+
+  // ── Maintain ──────────────────────────────────────────────────────────────
+
+  async function handleMaintain() {
+    const btn = document.getElementById("maintain-btn");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner" style="border-top-color:var(--muted)"></span>Analyzing…';
+
+    try {
+      const data = await api("POST", "/api/maintain");
+      if (data.proposals.length === 0) {
+        flash("Rulebook looks tight — no suggestions.");
+      } else {
+        renderMaintenanceProposals(data.proposals);
+        document.getElementById("maintenance-card").style.display = "block";
+        document.getElementById("maintenance-card").scrollIntoView({ behavior: "smooth" });
+      }
+    } catch (e) {
+      flash(e.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Maintain";
+    }
+  }
+
+  // Keep a reference to proposals so accept/dismiss can find them by index
+  let _maintainProposals = [];
+
+  function renderMaintenanceProposals(proposals) {
+    _maintainProposals = proposals;
+    const container = document.getElementById("maintenance-proposals");
+
+    container.innerHTML = proposals.map((p, i) => {
+      const label  = p.action === "merge" ? "MERGE" : p.action === "reword" ? "SHORTEN" : "DELETE";
+      const badgeCls = `badge-${p.action}`;
+
+      // Show current text for context
+      const idsLabel = p.rule_ids.map(id => `id=${id}`).join(" + ");
+      const newLine  = p.new_text
+        ? `<div class="m-proposal-new">&rarr; "${escapeHTML(p.new_text)}" <span class="badge badge-${p.new_category || 'general'}">${p.new_category || 'general'}</span></div>`
+        : "";
+
+      return `
+        <div class="m-proposal" id="mp-${i}">
+          <div class="m-proposal-header">
+            <span class="badge ${badgeCls}">${label}</span>
+            <div style="flex:1">
+              <div style="font-size:13px;color:var(--muted)">${idsLabel}</div>
+              ${newLine}
+            </div>
+          </div>
+          <div class="m-proposal-body">${escapeHTML(p.reason)}</div>
+          <div class="m-proposal-actions">
+            <button class="btn btn-success btn-sm" onclick="acceptMaintenance(${i})">Accept</button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('mp-${i}').remove()">Dismiss</button>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  async function acceptMaintenance(i) {
+    const p = _maintainProposals[i];
+    try {
+      if (p.action === "merge") {
+        // Delete all source rules, then add the merged one
+        for (const id of p.rule_ids) {
+          await api("DELETE", `/api/rules/${id}`);
+        }
+        await api("POST", "/api/rules", { text: p.new_text, category: p.new_category });
+        flash(`Merged ${p.rule_ids.length} rules into one.`);
+      } else if (p.action === "reword") {
+        await api("PUT", `/api/rules/${p.rule_ids[0]}`, { text: p.new_text, category: p.new_category });
+        flash("Rule shortened.");
+      } else if (p.action === "delete") {
+        for (const id of p.rule_ids) {
+          await api("DELETE", `/api/rules/${id}`);
+        }
+        flash("Rule deleted.");
+      }
+      document.getElementById(`mp-${i}`).remove();
+      loadRules();
+    } catch (e) {
+      flash(e.message, "error");
+    }
+  }
+
+  // ── Boot ───────────────────────────────────────────────────────────────────
+  loadRules();
+</script>
+</body>
+</html>
