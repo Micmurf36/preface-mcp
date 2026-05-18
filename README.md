@@ -47,7 +47,7 @@ Brief also uses an LLM to extract durable preferences from your existing convers
 
 ```bash
 git clone https://github.com/Micmurf36/brief-mcp.git
-cd brief-mcp
+cd brief
 cp .env.example .env
 # Edit .env — set BRIEF_API_KEY if you want the extract/maintain features
 docker compose up -d

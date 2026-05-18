@@ -8,7 +8,7 @@ import os
 from datetime import datetime, timezone
 from typing import Optional
 
-DB_PATH = os.environ.get("BRIEF_DB_PATH", "brief.db")
+DB_PATH = os.environ.get("BRIEF_DB_PATH", "/data/brief.db")
 
 
 def get_connection() -> sqlite3.Connection:
