@@ -1,5 +1,5 @@
 """
-FastAPI app for Brief.
+FastAPI app for Preface.
 
 Serves:
   GET  /            — dashboard UI (dashboard.html)
@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Brief", description="Personal AI rulebook server", lifespan=lifespan)
+app = FastAPI(title="Preface", description="Personal AI rulebook server", lifespan=lifespan)
 
 # Mount the MCP server at /mcp.
 # Streamable HTTP transport exposes a single endpoint — clients connect to:
@@ -126,7 +126,7 @@ class _MCPDispatcher:
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "brief", "transport": _transport}
+    return {"status": "ok", "service": "preface", "transport": _transport}
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -220,6 +220,6 @@ async def api_maintain():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("BRIEF_PORT", 8080))
+    port = int(os.environ.get("PREFACE_PORT", 8080))
     asgi_app = _MCPDispatcher(app, mcp_asgi)
     uvicorn.run(asgi_app, host="0.0.0.0", port=port, proxy_headers=True, forwarded_allow_ips="*")

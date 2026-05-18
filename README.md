@@ -1,6 +1,6 @@
-# Brief — Self-Hosted MCP Memory Server for AI Tools
+# Preface — Self-Hosted MCP Memory Server for AI Tools
 
-**Brief** is a lightweight, self-hosted [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that stores your personal AI preferences and injects them into every conversation automatically. Write your rules once. Every MCP-compatible AI tool reads them without you having to repeat yourself.
+**Preface** is a lightweight, self-hosted [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that stores your personal AI preferences and injects them into every conversation automatically. Write your rules once. Every MCP-compatible AI tool reads them without you having to repeat yourself.
 
 Works with Claude Desktop, Cursor, Cline, Windsurf, and any other MCP client.
 
@@ -10,22 +10,22 @@ Works with Claude Desktop, Cursor, Cline, Windsurf, and any other MCP client.
 
 Every time you open a new chat with Claude or Cursor, you start from zero. You re-explain that you hate em dashes, that you want TypeScript over JavaScript, that you prefer short answers. ChatGPT has memory but it's locked to ChatGPT. Cursor has its rules file but it's per-project. Nothing portable exists across tools.
 
-Brief fixes that.
+Preface fixes that.
 
 ---
 
 ## How It Works
 
-Brief runs a small server (Docker or bare Python) that exposes your personal rulebook over MCP. When any AI tool connects, it calls `get_brief` at the start of the conversation and gets your preferences back as a compact string — tone, writing style, coding conventions, whatever you've saved. No re-explaining. No per-project configs to maintain.
+Preface runs a small server (Docker or bare Python) that exposes your personal rulebook over MCP. When any AI tool connects, it calls `get_preface` at the start of the conversation and gets your preferences back as a compact string — tone, writing style, coding conventions, whatever you've saved. No re-explaining. No per-project configs to maintain.
 
 ```
 Claude Desktop ──┐
-Cursor          ──┤── HTTP → Brief (MCP server) ── SQLite rulebook
+Cursor          ──┤── HTTP → Preface (MCP server) ── SQLite rulebook
 Cline           ──┤
 Your own agent  ──┘
 ```
 
-Brief also uses an LLM to extract durable preferences from your existing conversation transcripts, so you can bootstrap your rulebook from conversations you've already had.
+Preface also uses an LLM to extract durable preferences from your existing conversation transcripts, so you can bootstrap your rulebook from conversations you've already had.
 
 ---
 
@@ -34,9 +34,9 @@ Brief also uses an LLM to extract durable preferences from your existing convers
 - **Persistent AI memory across tools** — one rulebook, read by Claude, Cursor, Cline, or any custom MCP client
 - **Self-hosted** — your preferences live on your machine or VPS, not in a third-party cloud
 - **Web dashboard** — add, edit, and delete rules from a browser; no build step, just one HTML file
-- **AI-powered rule extraction** — paste a conversation transcript and Brief proposes durable rules it finds
-- **AI maintenance** — run `maintain_brief` to merge, shorten, or delete redundant rules automatically
-- **Token budget enforcement** — `get_brief` stays under your configured limit and surfaces low-use rules as pruning candidates
+- **AI-powered rule extraction** — paste a conversation transcript and Preface proposes durable rules it finds
+- **AI maintenance** — run `maintain_preface` to merge, shorten, or delete redundant rules automatically
+- **Token budget enforcement** — `get_preface` stays under your configured limit and surfaces low-use rules as pruning candidates
 - **Multi-provider LLM support** — Claude, OpenAI, or local Ollama for extraction features
 - **Docker + bare Python** — ships with a Dockerfile and `docker-compose.yml`; also runs with a single `python api.py`
 - **Cloudflare Tunnel compatible** — access your preferences from anywhere, not just localhost
@@ -46,10 +46,10 @@ Brief also uses an LLM to extract durable preferences from your existing convers
 ## Quick Start (Docker)
 
 ```bash
-git clone https://github.com/Micmurf36/brief-mcp.git
-cd brief
+git clone https://github.com/Micmurf36/preface-mcp.git
+cd preface-mcp
 cp .env.example .env
-# Edit .env — set BRIEF_API_KEY if you want the extract/maintain features
+# Edit .env — set PREFACE_API_KEY if you want the extract/maintain features
 docker compose up -d
 ```
 
@@ -68,14 +68,14 @@ Edit your Claude Desktop config:
 ```json
 {
   "mcpServers": {
-    "brief": {
+    "preface": {
       "url": "http://localhost:8080/mcp"
     }
   }
 }
 ```
 
-Restart Claude Desktop, then ask Claude to call `get_brief`. It should return your rulebook (or a prompt to add your first rule).
+Restart Claude Desktop, then ask Claude to call `get_preface`. It should return your rulebook (or a prompt to add your first rule).
 
 ---
 
@@ -88,13 +88,13 @@ Restart Claude Desktop, then ask Claude to call `get_brief`. It should return yo
 | Windsurf | MCP settings > remote server URL |
 | Any custom MCP client | Point it at `http://localhost:8080/mcp` |
 
-Brief uses [Streamable HTTP transport](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#streamable-http). If your client only supports the older SSE transport, check the startup logs — Brief prints which transport it detected and the correct URL.
+Preface uses [Streamable HTTP transport](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#streamable-http). If your client only supports the older SSE transport, check the startup logs — Preface prints which transport it detected and the correct URL.
 
 ---
 
 ## Deploying Publicly — Pick Your Path
 
-Brief is currently tested and running on a home server via Cloudflare Tunnel. If you have a VPS with a real domain, the nginx/Caddy path works too — but that configuration is less battle-tested by this project's author. Both options are documented below.
+Preface is currently tested and running on a home server via Cloudflare Tunnel. If you have a VPS with a real domain, the nginx/Caddy path works too — but that configuration is less battle-tested by this project's author. Both options are documented below.
 
 ---
 
@@ -117,7 +117,7 @@ sudo apt update && sudo apt install cloudflared
 
 ```bash
 cloudflared tunnel login
-cloudflared tunnel create brief
+cloudflared tunnel create preface
 ```
 
 **3. Create a config file** at `~/.cloudflared/config.yml`:
@@ -127,7 +127,7 @@ tunnel: <your-tunnel-id>
 credentials-file: /home/<user>/.cloudflared/<tunnel-id>.json
 
 ingress:
-  - hostname: brief.yourdomain.com
+  - hostname: preface.yourdomain.com
     service: http://localhost:8080
   - service: http_status:404
 ```
@@ -135,8 +135,8 @@ ingress:
 **4. Route DNS and start**
 
 ```bash
-cloudflared tunnel route dns brief brief.yourdomain.com
-cloudflared tunnel run brief
+cloudflared tunnel route dns preface preface.yourdomain.com
+cloudflared tunnel run preface
 ```
 
 To run the tunnel automatically on boot:
@@ -149,21 +149,21 @@ sudo systemctl start cloudflared
 
 **5. Update your MCP clients**
 
-Replace `http://localhost:8080/mcp` with `https://brief.yourdomain.com/mcp` in your Claude Desktop, Cursor, or Cline config. Brief's server is written to work correctly behind Cloudflare Tunnel with no additional configuration needed.
+Replace `http://localhost:8080/mcp` with `https://preface.yourdomain.com/mcp` in your Claude Desktop, Cursor, or Cline config. Preface's server is written to work correctly behind Cloudflare Tunnel with no additional configuration needed.
 
-> **Security note:** The MCP endpoint has no built-in authentication. If you expose Brief publicly, lock it down with [Cloudflare Zero Trust Access](https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/) (free tier available) or restrict it to your IP in Cloudflare's firewall rules.
+> **Security note:** The MCP endpoint has no built-in authentication. If you expose Preface publicly, lock it down with [Cloudflare Zero Trust Access](https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/) (free tier available) or restrict it to your IP in Cloudflare's firewall rules.
 
 ---
 
 ### Option B: VPS with a Real Domain (nginx or Caddy)
 
-If you have a VPS (DigitalOcean, Hetzner, Linode, etc.) with a domain pointed at it, you can put Brief behind a standard reverse proxy. This is the more traditional self-hosting path.
+If you have a VPS (DigitalOcean, Hetzner, Linode, etc.) with a domain pointed at it, you can put Preface behind a standard reverse proxy. This is the more traditional self-hosting path.
 
 **Caddy** is the easiest option — it handles HTTPS certificates automatically:
 
 ```
 # /etc/caddy/Caddyfile
-brief.yourdomain.com {
+preface.yourdomain.com {
     reverse_proxy localhost:8080
     basicauth * {
         youruser <bcrypt-hashed-password>
@@ -176,9 +176,9 @@ brief.yourdomain.com {
 ```nginx
 server {
     listen 443 ssl;
-    server_name brief.yourdomain.com;
+    server_name preface.yourdomain.com;
 
-    # SSL via certbot: sudo certbot --nginx -d brief.yourdomain.com
+    # SSL via certbot: sudo certbot --nginx -d preface.yourdomain.com
 
     location / {
         proxy_pass http://127.0.0.1:8080;
@@ -190,7 +190,7 @@ server {
 }
 ```
 
-Then point your MCP clients at `https://brief.yourdomain.com/mcp`.
+Then point your MCP clients at `https://preface.yourdomain.com/mcp`.
 
 > **Security note:** Add HTTP basic auth to your reverse proxy. The MCP endpoint has no authentication of its own — without it, anyone who knows your URL can read and modify your rulebook.
 
@@ -201,7 +201,7 @@ Then point your MCP clients at `https://brief.yourdomain.com/mcp`.
 ```bash
 pip install -r requirements.txt
 cp .env.example .env
-# Set BRIEF_DB_PATH=brief.db for local development
+# Set PREFACE_DB_PATH=preface.db for local development
 python api.py
 ```
 
@@ -211,17 +211,17 @@ python api.py
 
 | Tool | Description |
 |---|---|
-| `get_brief` | Returns your full rulebook. Call this at the start of every conversation. Tracks hit counts for pruning. |
+| `get_preface` | Returns your full rulebook. Call this at the start of every conversation. Tracks hit counts for pruning. |
 | `add_rule` | Adds a rule. Rejects near-duplicates (85%+ similarity) with a warning. |
 | `update_rule` | Edit a rule by its `id`. |
 | `delete_rule` | Remove a rule by its `id`. |
 | `extract_rules` | Analyzes a conversation transcript and proposes durable preference rules. Does not save automatically. |
-| `maintain_brief` | Audits the rulebook with an LLM and proposes merges, rewrites, and deletions. Nothing changes automatically. |
+| `maintain_preface` | Audits the rulebook with an LLM and proposes merges, rewrites, and deletions. Nothing changes automatically. |
 | `get_stats` | Shows rule count, token usage, last updated, and all rule IDs. |
 
 ### Token Budget
 
-`get_brief` enforces a configurable token limit (default: 600 tokens, roughly 30-40 concise rules). Rules that push past the budget are surfaced as pruning candidates by hit count rather than silently dropped. Tune this with `BRIEF_TOKEN_BUDGET` in your `.env`.
+`get_preface` enforces a configurable token limit (default: 600 tokens, roughly 30-40 concise rules). Rules that push past the budget are surfaced as pruning candidates by hit count rather than silently dropped. Tune this with `PREFACE_TOKEN_BUDGET` in your `.env`.
 
 ---
 
@@ -243,10 +243,10 @@ The fastest way to populate your rulebook is from conversations you've already h
 
 1. Copy a conversation from Claude.ai, ChatGPT, Cursor, or anywhere else
 2. Paste it into the **Extract from Transcript** box in the dashboard (or call `extract_rules` via MCP)
-3. Brief sends it to your configured LLM with a focused prompt that pulls out only durable, generalizable preferences — not one-off requests
+3. Preface sends it to your configured LLM with a focused prompt that pulls out only durable, generalizable preferences — not one-off requests
 4. Review the proposals and add the ones you want to keep
 
-The extraction model is configured via `BRIEF_LLM_PROVIDER`. Set it to `claude`, `openai`, or `ollama`.
+The extraction model is configured via `PREFACE_LLM_PROVIDER`. Set it to `claude`, `openai`, or `ollama`.
 
 ---
 
@@ -254,23 +254,23 @@ The extraction model is configured via `BRIEF_LLM_PROVIDER`. Set it to `claude`,
 
 | Variable | Default | Description |
 |---|---|---|
-| `BRIEF_LLM_PROVIDER` | `claude` | LLM for extraction features: `claude`, `openai`, or `ollama` |
-| `BRIEF_API_KEY` | — | API key for the selected provider. Not needed for Ollama. |
-| `BRIEF_LLM_MODEL` | provider default | Override the model (e.g. `claude-haiku-4-5-20251001`, `gpt-4o-mini`, `llama3`) |
-| `BRIEF_OLLAMA_URL` | `http://localhost:11434` | Ollama server URL |
-| `BRIEF_PORT` | `8080` | Port Brief listens on |
-| `BRIEF_DB_PATH` | `/data/brief.db` | Path to the SQLite database |
-| `BRIEF_TOKEN_BUDGET` | `600` | Max tokens for `get_brief` output |
+| `PREFACE_LLM_PROVIDER` | `claude` | LLM for extraction features: `claude`, `openai`, or `ollama` |
+| `PREFACE_API_KEY` | — | API key for the selected provider. Not needed for Ollama. |
+| `PREFACE_LLM_MODEL` | provider default | Override the model (e.g. `claude-haiku-4-5-20251001`, `gpt-4o-mini`, `llama3`) |
+| `PREFACE_OLLAMA_URL` | `http://localhost:11434` | Ollama server URL |
+| `PREFACE_PORT` | `8080` | Port Preface listens on |
+| `PREFACE_DB_PATH` | `/data/preface.db` | Path to the SQLite database |
+| `PREFACE_TOKEN_BUDGET` | `600` | Max tokens for `get_preface` output |
 
 ---
 
 ## Docker Persistence
 
-Brief is stateless except for the SQLite file. The `docker-compose.yml` stores it in a named Docker volume so it survives container restarts and upgrades. You can also bind-mount to a specific host path if you prefer:
+Preface is stateless except for the SQLite file. The `docker-compose.yml` stores it in a named Docker volume so it survives container restarts and upgrades. You can also bind-mount to a specific host path if you prefer:
 
 ```yaml
 volumes:
-  - /home/youruser/brief-data:/data
+  - /home/youruser/preface-data:/data
 ```
 
 ---
@@ -285,14 +285,14 @@ Each rule has these fields:
 | `text` | The rule text |
 | `category` | `writing`, `coding`, `tone`, or `general` |
 | `created_at` | ISO 8601 timestamp |
-| `hit_count` | Incremented each time `get_brief` runs — useful for spotting unused rules |
+| `hit_count` | Incremented each time `get_preface` runs — useful for spotting unused rules |
 | `source` | `manual` (added directly) or `extracted` (proposed by `extract_rules` and accepted) |
 
 ---
 
 ## Contributing
 
-Brief is intentionally small — under 500 lines of Python — so it stays readable and forkable. Good contributions:
+Preface is intentionally small — under 500 lines of Python — so it stays readable and forkable. Good contributions:
 
 - Additional LLM providers in `extract.py`
 - Rule import/export (JSON)

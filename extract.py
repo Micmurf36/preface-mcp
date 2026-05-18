@@ -1,15 +1,15 @@
 """
-LLM extraction and maintenance logic for Brief.
+LLM extraction and maintenance logic for Preface.
 
 Two public functions:
   extract_from_transcript(transcript)  — find durable preferences in a conversation
   maintain_rules(rules)                — audit existing rules for verbosity/redundancy
 
 Configure via environment variables:
-  BRIEF_LLM_PROVIDER  — claude | openai | ollama  (default: claude)
-  BRIEF_API_KEY       — API key (not needed for ollama)
-  BRIEF_LLM_MODEL     — override the default model for the provider
-  BRIEF_OLLAMA_URL    — Ollama server URL (default: http://localhost:11434)
+  PREFACE_LLM_PROVIDER  — claude | openai | ollama  (default: claude)
+  PREFACE_API_KEY       — API key (not needed for ollama)
+  PREFACE_LLM_MODEL     — override the default model for the provider
+  PREFACE_OLLAMA_URL    — Ollama server URL (default: http://localhost:11434)
 """
 
 import os
@@ -65,8 +65,8 @@ JSON only — no explanation outside the array."""
 
 async def _call_provider(system_prompt: str, user_message: str) -> str:
     """Send a message to the configured LLM and return the raw text response."""
-    provider = os.environ.get("BRIEF_LLM_PROVIDER", "claude").lower()
-    api_key = os.environ.get("BRIEF_API_KEY", "")
+    provider = os.environ.get("PREFACE_LLM_PROVIDER", "claude").lower()
+    api_key = os.environ.get("PREFACE_API_KEY", "")
 
     if provider == "claude":
         return await _claude(system_prompt, user_message, api_key)
@@ -77,13 +77,13 @@ async def _call_provider(system_prompt: str, user_message: str) -> str:
     else:
         raise ValueError(
             f"Unknown provider '{provider}'. "
-            "Set BRIEF_LLM_PROVIDER to: claude, openai, or ollama"
+            "Set PREFACE_LLM_PROVIDER to: claude, openai, or ollama"
         )
 
 
 async def _claude(system: str, user: str, api_key: str) -> str:
     import anthropic
-    model = os.environ.get("BRIEF_LLM_MODEL", "claude-haiku-4-5-20251001")
+    model = os.environ.get("PREFACE_LLM_MODEL", "claude-haiku-4-5-20251001")
     client = anthropic.Anthropic(api_key=api_key)
     resp = client.messages.create(
         model=model, max_tokens=1024, system=system,
@@ -94,7 +94,7 @@ async def _claude(system: str, user: str, api_key: str) -> str:
 
 async def _openai(system: str, user: str, api_key: str) -> str:
     import openai
-    model = os.environ.get("BRIEF_LLM_MODEL", "gpt-4o-mini")
+    model = os.environ.get("PREFACE_LLM_MODEL", "gpt-4o-mini")
     client = openai.AsyncOpenAI(api_key=api_key)
     resp = await client.chat.completions.create(
         model=model, max_tokens=1024,
@@ -105,8 +105,8 @@ async def _openai(system: str, user: str, api_key: str) -> str:
 
 async def _ollama(system: str, user: str) -> str:
     import httpx
-    url = os.environ.get("BRIEF_OLLAMA_URL", "http://localhost:11434")
-    model = os.environ.get("BRIEF_LLM_MODEL", "llama3")
+    url = os.environ.get("PREFACE_OLLAMA_URL", "http://localhost:11434")
+    model = os.environ.get("PREFACE_LLM_MODEL", "llama3")
     async with httpx.AsyncClient(timeout=60.0) as client:
         resp = await client.post(f"{url}/api/chat", json={
             "model": model, "stream": False,

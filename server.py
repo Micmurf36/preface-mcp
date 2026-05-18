@@ -1,13 +1,13 @@
 """
-Brief MCP server — all tools live here.
+Preface MCP server — all tools live here.
 
 Tools exposed to MCP clients:
-  get_brief      — returns the full rulebook as a compact string
+  get_preface    — returns the full rulebook as a compact string
   add_rule       — adds a rule (with near-duplicate detection)
   update_rule    — edits a rule by id
   delete_rule    — removes a rule by id
   extract_rules  — analyzes a transcript and proposes new rules (no auto-save)
-  maintain_brief — audits the rulebook for verbosity and redundancy (no auto-save)
+  maintain_preface — audits the rulebook for verbosity and redundancy (no auto-save)
   get_stats      — returns rule count, token estimate, last updated
 """
 
@@ -34,7 +34,7 @@ from mcp.server.fastmcp import FastMCP
 import db
 
 mcp = FastMCP(
-    "brief",
+    "preface",
     host="0.0.0.0",
     transport_security=ts.TransportSecuritySettings(
         enable_dns_rebinding_protection=False,
@@ -42,14 +42,14 @@ mcp = FastMCP(
         allowed_origins=["*"]
     ),
     instructions=(
-        "Brief stores the user's personal AI preferences. "
-        "Call get_brief at the start of every conversation to load their rulebook."
+        "Preface stores the user's personal AI preferences. "
+        "Call get_preface at the start of every conversation to load their rulebook."
     ),
 )
 
-# Configurable via BRIEF_TOKEN_BUDGET env var.
+# Configurable via PREFACE_TOKEN_BUDGET env var.
 # Default is 600 — enough for ~30–40 concise rules without eating into your context window.
-TOKEN_BUDGET = int(os.environ.get("BRIEF_TOKEN_BUDGET", "600"))
+TOKEN_BUDGET = int(os.environ.get("PREFACE_TOKEN_BUDGET", "600"))
 SIMILARITY_THRESHOLD = 0.85
 VALID_CATEGORIES = {"writing", "coding", "tone", "general"}
 
@@ -65,7 +65,7 @@ def _similarity(a: str, b: str) -> float:
 
 
 @mcp.tool()
-def get_brief() -> str:
+def get_preface() -> str:
     """
     Returns the user's full AI rulebook as a compact string.
     Call this at the start of every conversation.
@@ -75,7 +75,7 @@ def get_brief() -> str:
     rules = db.list_rules()
     if not rules:
         return (
-            "[BRIEF] No rules yet.\n"
+            "[PREFACE] No rules yet.\n"
             "Use add_rule to start building your rulebook, or "
             "paste a transcript into extract_rules to find preferences automatically."
         )
@@ -87,7 +87,7 @@ def get_brief() -> str:
     for rule in rules:
         by_category.setdefault(rule["category"], []).append(rule)
 
-    lines = ["[BRIEF]", ""]
+    lines = ["[PREFACE]", ""]
     token_count = 0
     pruning_candidates = []
 
@@ -103,7 +103,7 @@ def get_brief() -> str:
         lines.append("")
 
     if pruning_candidates:
-        lines.append(f"[{len(pruning_candidates)} rule(s) over budget — run maintain_brief to tighten up]")
+        lines.append(f"[{len(pruning_candidates)} rule(s) over budget — run maintain_preface to tighten up]")
 
     return "\n".join(lines)
 
@@ -157,7 +157,7 @@ def update_rule(rule_id: int, text: str, category: str) -> str:
 def delete_rule(rule_id: int) -> str:
     """
     Delete a rule permanently by its id.
-    Use get_brief or get_stats to find the id you want to remove.
+    Use get_preface or get_stats to find the id you want to remove.
     """
     if not db.get_rule(rule_id):
         return f"No rule found with id={rule_id}. Use get_stats to list all ids."
@@ -198,11 +198,11 @@ async def extract_rules(transcript: str) -> str:
 
 
 @mcp.tool()
-async def maintain_brief() -> str:
+async def maintain_preface() -> str:
     """
     Audit your rulebook with an LLM and get proposals to merge overlapping rules,
     shorten verbose ones, or delete redundant ones.
-    Nothing changes automatically — review the proposals, then apply with
+    Nothing changes automatically — review proposals, then apply with
     update_rule, delete_rule, or add_rule (for merges: delete the originals first).
     Run this occasionally when your rulebook feels bloated or over budget.
     """
@@ -254,7 +254,7 @@ def get_stats() -> str:
 
     budget_pct = int(stats["estimated_tokens"] / TOKEN_BUDGET * 100) if TOKEN_BUDGET else 0
     lines = [
-        "[BRIEF Stats]",
+        "[PREFACE Stats]",
         f"  Rules:        {stats['rule_count']}",
         f"  Tokens:       ~{stats['estimated_tokens']} / {TOKEN_BUDGET} ({budget_pct}%)",
         f"  Last updated: {stats['last_updated']}",

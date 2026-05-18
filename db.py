@@ -1,5 +1,5 @@
 """
-SQLite helpers for Brief. All database access goes through here.
+SQLite helpers for Preface. All database access goes through here.
 The schema is intentionally simple — one table, no migrations needed.
 """
 
@@ -8,7 +8,7 @@ import os
 from datetime import datetime, timezone
 from typing import Optional
 
-DB_PATH = os.environ.get("BRIEF_DB_PATH", "/data/brief.db")
+DB_PATH = os.environ.get("PREFACE_DB_PATH", "/data/preface.db")
 
 
 def get_connection() -> sqlite3.Connection:
@@ -81,7 +81,7 @@ def delete_rule(rule_id: int) -> bool:
 
 
 def increment_hit_counts():
-    """Called each time get_brief runs — helps identify unused rules over time."""
+    """Called each time get_preface runs — helps identify unused rules over time."""
     with get_connection() as conn:
         conn.execute("UPDATE rules SET hit_count = hit_count + 1")
         conn.commit()
